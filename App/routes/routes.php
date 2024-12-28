@@ -21,7 +21,8 @@ $router->post('/auth/logout', [AuthController::class, 'logout']);
 
 // Category routes
 $router->get('/categories', [CategoryApiController::class, 'getAll']);
-// $router->get('/categories/{id}', 'CategoryApiController@getById');
-// $router->post('/categories', 'CategoryApiController@create');
-// $router->put('/categories/{id}', 'CategoryApiController@update');
-// $router->delete('/categories/{id}', 'CategoryApiController@delete'); 
+$router->get('/categories/{id}', [CategoryApiController::class, 'getById']);
+$router->post('/categories', [CategoryApiController::class, 'create']);
+$router->put('/categories/{id}', [CategoryApiController::class, 'update']);
+$router->delete('/categories/{id}', [CategoryApiController::class, 'delete']);
+

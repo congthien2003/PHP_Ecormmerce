@@ -37,9 +37,9 @@ class AuthRepository {
 
     public function getUserByEmail($email) {
         $stmt = $this->db->prepare("
-            SELECT u.*, p.role_id 
+            SELECT u.*, p.IdRole
             FROM users u 
-            LEFT JOIN permissions p ON u.id = p.user_id 
+            LEFT JOIN permissions p ON u.id = p.IdUser 
             WHERE u.email = ?
         ");
         $stmt->execute([$email]);

@@ -2,7 +2,7 @@
 require_once 'App/Models/ProductModel.php'; 
 require_once 'App/Repository/ProductRepository.php'; 
 require_once('App/config/database.php'); 
-
+require_once('App/Middlewares/AuthMiddleware.php');
 class ProductApiController {
 
     private $productRepository; 
@@ -23,17 +23,19 @@ class ProductApiController {
     }
     // GET: /products
     public function getAll() {
+        AuthMiddleware::handleAuth();
         try {
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
             $category = isset($_GET['category']) ? $_GET['category'] : null;
             $sort = isset($_GET['sort']) ? $_GET['sort'] : 'default';
 
-            $result = $this->productRepository->getProducts();
+            $result = $this->productRepository->getProducts($page, $limit, $category, $sort);
             Response::json([
                 'status' => 'success',
                 'data' => [
-                    'products' => $result,
+                    'products' => $result['data'],
+                    'pagination' => $result['pagination']
                 ]
             ]);
         } catch (\Exception $e) {

@@ -53,17 +53,15 @@ class AuthController {
             $password = $data['password'];
 
             $user = $this->authRepository->getUserByEmail($email);
-
             if ($user && password_verify($password, $user['password'])) {
                 $token = $this->generateJWT($user);
                 Response::json([
                     'status' => 'success',
                     'token' => $token,
                     'user' => [
-                        'id' => $user['id'],
-                        'name' => $user['name'],
+                        'id' => $user['Id'],
                         'email' => $user['email'],
-                        'role' => $user['role']
+                        'role' => $user['IdRole']
                     ]
                 ]);
                 return;

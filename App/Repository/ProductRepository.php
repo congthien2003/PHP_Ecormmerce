@@ -10,82 +10,94 @@ class ProductRepository
     } 
  
     public function getProducts($page = 1, $limit = 12, $category = null, $sort = 'default') 
-    { 
-        try {
-            // Calculate offset
-            $offset = ($page - 1) * $limit;
-            $params = [];
-            
-            // Base query for products
-            $query = "SELECT 
-                p.ID,
-                p.Name,
-                p.Description,
-                p.Price,
-                p.ImageURL,
-                CASE 
-                    WHEN pf.idFood IS NOT NULL THEN 1
-                    ELSE 0
-                END AS isFavorite
-            FROM 
-                product AS p
-            LEFT JOIN 
-                productfavorite AS pf 
-            ON 
-                p.ID = pf.idFood
-            WHERE 1=1";
-
-            // Add category filter if specified
-            if ($category !== null && $category !== 'all') {
-                $query .= " AND p.category_id = ?";
-                $params[] = $category;
-            }
-
-            // Add sorting
-            switch ($sort) {
-                case 'price_asc':
-                    $query .= " ORDER BY p.Price ASC";
-                    break;
-                case 'price_desc':
-                    $query .= " ORDER BY p.Price DESC";
-                    break;
-                case 'name_asc':
-                    $query .= " ORDER BY p.Name ASC";
-                    break;
-                case 'name_desc':
-                    $query .= " ORDER BY p.Name DESC";
-                    break;
-                default:
-                    $query .= " ORDER BY p.ID DESC";
-            }
-
-            // Get total count for pagination
-            $countQuery = preg_replace('/SELECT\s+.+?\sFROM\s/is', 'SELECT COUNT(*) as total FROM ', $query);
+{ 
+    try {
+        // Calculate offset for pagination
+        $offset = (int)($page - 1) * $limit;
+        $params = [];
+        
+        // Base query for products
         $query = "SELECT 
             p.ID,
             p.Name,
             p.Description,
             p.Price,
             p.ImageURL,
+            c.ID as CategoryId,
+            c.Name as CategoryName,
             CASE 
-                WHEN pf.idFood IS NOT NULL THEN 1 -- Nếu có trong bảng productfavorite, là yêu thích
-                ELSE 0 -- Nếu không có, không phải yêu thích
+                WHEN pf.idFood IS NOT NULL THEN 1 -- Mark as favorite
+                ELSE 0 -- Not favorite
             END AS isFavorite
         FROM 
             product AS p
         LEFT JOIN 
+            categories AS c 
+        ON 
+            p.CategoryId = c.ID
+        LEFT JOIN 
             productfavorite AS pf 
         ON 
-            p.ID = pf.idFood;";
-        $stmt = $this->conn->prepare($query); 
-        $stmt->execute(); 
-        $result = $stmt->fetchAll(PDO::FETCH_OBJ); 
-        return $result; 
+            p.ID = pf.idFood
+        WHERE 1=1";
+
+        // Add category filter if specified
+        if ($category !== null && $category !== 0) {
+            $query .= " AND p.CategoryId = :category";
+            $params[':category'] = $category;
+        }
+
+        // Add sorting
+        switch ($sort) {
+            case 'price_asc':
+                $query .= " ORDER BY p.Price ASC";
+                break;
+            case 'price_desc':
+                $query .= " ORDER BY p.Price DESC";
+                break;
+            case 'name_asc':
+                $query .= " ORDER BY p.Name ASC";
+                break;
+            case 'name_desc':
+                $query .= " ORDER BY p.Name DESC";
+                break;
+            default:
+                $query .= " ORDER BY p.ID DESC";
+        }
+
+        // Add pagination
+        $query .= " LIMIT $limit OFFSET $offset";
+
+        // Prepare and execute the query
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+        $products = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        // Get total count for pagination
+        $countQuery = "SELECT COUNT(*) as total FROM product WHERE 1=1";
+        if ($category !== null && $category !== 0) {
+            $countQuery .= " AND CategoryId = :category";
+        }
+        $countStmt = $this->conn->prepare($countQuery);
+        // $countStmt->execute([':category' => $category]);
+        $total = $countStmt->fetch(PDO::FETCH_OBJ)->total;
+
+        // Return result with pagination info
+        return [
+            'data' => $products,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'total_pages' => ceil($total / $limit),
+            ]
+        ];
     } 
-    catch(PDOException $e) {
+    catch (PDOException $e) {
         echo "Connection failed: " . $e->getMessage();
     }
 }
+
     
 
  

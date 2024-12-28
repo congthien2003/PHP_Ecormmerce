@@ -11,25 +11,24 @@ class UserRepository
     } 
 
     // Đăng ký người dùng mới
-    public function registerUser($username, $password, $email, $phone, $address) 
+    public function registerUser($email, $password, $phone, $address) 
     { 
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT); 
-        $query = "INSERT INTO " . $this->table_name . " (Username, Password) VALUES (:username, :password, :email, :phone, :address)"; 
+        $query = "INSERT INTO " . $this->table_name . " (email, Password) VALUES (:email, :password, :phone, :address)"; 
         $stmt = $this->conn->prepare($query); 
-        $stmt->bindParam(':username', $username); 
+        $stmt->bindParam(':email', $email); 
         $stmt->bindParam(':password', $hashedPassword);
-        $stmt->bindParam(':email', $email);
         $stmt->bindParam(':phone', $phone);
         $stmt->bindParam(':address', $address); 
         return $stmt->execute(); 
     } 
 
     // Đăng nhập người dùng
-    public function loginUser($username, $password) 
+    public function loginUser($email, $password) 
     { 
-        $query = "SELECT * FROM " . $this->table_name . " WHERE username = :username"; 
+        $query = "SELECT * FROM " . $this->table_name . " WHERE email = :email"; 
         $stmt = $this->conn->prepare($query); 
-        $stmt->bindParam(':username', $username); 
+        $stmt->bindParam(':email', $email); 
         $stmt->execute(); 
         $user = $stmt->fetch(PDO::FETCH_ASSOC); 
         $hashed = password_hash($password, PASSWORD_BCRYPT);
@@ -43,7 +42,7 @@ class UserRepository
     public function getUserRole($userId) 
     { 
         $query = "SELECT r.Name AS roleName 
-                  FROM permissionuser AS p 
+                  FROM permissions AS p 
                   JOIN roles AS r ON p.IdRole = r.Id 
                   WHERE p.IdUser = :userId"; 
         $stmt = $this->conn->prepare($query); 

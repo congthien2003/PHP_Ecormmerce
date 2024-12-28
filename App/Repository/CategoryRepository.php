@@ -30,17 +30,15 @@ class CategoryRepository {
         }
     }
 
-    public function createCategory($name, $description = '') {
+    public function createCategory($name) {
         try {
-            $query = "INSERT INTO " . $this->table_name . " (name, description) VALUES (:name, :description)";
+            $query = "INSERT INTO " . $this->table_name . " (name) VALUES (:name)";
             $stmt = $this->db->prepare($query);
             
             // Sanitize inputs
             $name = htmlspecialchars(strip_tags($name));
-            $description = htmlspecialchars(strip_tags($description));
 
             $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':description', $description);
 
             if ($stmt->execute()) {
                 $newCategoryId = $this->db->lastInsertId();
@@ -52,21 +50,19 @@ class CategoryRepository {
         }
     }
 
-    public function updateCategory($id, $name, $description = '') {
+    public function updateCategory($id, $name) {
         try {
             $query = "UPDATE " . $this->table_name . " 
-                     SET name = :name, description = :description 
+                     SET name = :name,
                      WHERE id = :id";
             
             $stmt = $this->db->prepare($query);
             
             // Sanitize inputs
             $name = htmlspecialchars(strip_tags($name));
-            $description = htmlspecialchars(strip_tags($description));
             
             $stmt->bindParam(':id', $id);
             $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':description', $description);
 
             return $stmt->execute();
         } catch(PDOException $e) {
