@@ -34,54 +34,76 @@ class ProductController
         include 'App/views/product/list.php'; 
     } 
  
-    public function add() 
-    { 
-        $errors = []; 
- 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') { 
-            $name = $_POST['name']; 
-            $description = $_POST['description']; 
-            $price = $_POST['price']; 
-            $imageURL = $_POST['imageURL']; 
-            $category_id = $_POST['category_id']; 
+    public function add()
+{
+    $errors = [];
 
- 
-            // Kiểm tra tên sản phẩm 
-            if (empty($name)) { 
-                $errors[] = 'Tên sản phẩm là bắt buộc.'; 
-            } elseif (strlen($name) < 10 || strlen($name) > 100) { 
-                $errors[] = 'Tên sản phẩm phải có từ 10 đến 100 ký tự.'; 
-            } 
- 
-            // Kiểm tra giá 
-            if (!is_numeric($price) || $price <= 0) { 
-                $errors[] = 'Giá phải là một số dương lớn hơn 0.'; 
-            } 
- 
-            if (empty($errors)) { 
-                $id = count($this->products) + 1; 
-                
-                
-                $newproduct = (new ProductRepository($this->db))->addProduct($name, $description, $price, $imageURL, $category_id);
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $name = $_POST['name'];
+        $description = $_POST['description'];
+        $price = $_POST['price'];
+        $category_id = $_POST['category_id'];
 
-                if ($newproduct) {
-                    $this->products[] = $newproduct; 
-                    $_SESSION['products'] = $this->products;
-                    header('Location: /php/S4_PHP/Product/list'); 
-                    exit(); 
-                    
+        // Validate name
+        if (empty($name)) {
+            $errors[] = 'Tên sản phẩm là bắt buộc.';
+        } elseif (strlen($name) < 10 || strlen($name) > 100) {
+            $errors[] = 'Tên sản phẩm phải có từ 10 đến 100 ký tự.';
+        }
+
+        // Validate price
+        if (!is_numeric($price) || $price <= 0) {
+            $errors[] = 'Giá phải là một số dương lớn hơn 0.';
+        }
+
+        // Validate and upload image
+        if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
+            $imageTmpPath = $_FILES['image']['tmp_name'];
+            $imageName = $_FILES['image']['name'];
+            $bucket = 'images'; // Supabase storage bucket
+            $destinationPath = "products/" . uniqid() . "_" . basename($imageName);
+
+            // Use the UploadService
+            try {
+                require_once 'App/Services/UploadService.php'; // Include the UploadService class
+
+                $supabaseUrl = 'https://your-supabase-url.supabase.co'; // Replace with your Supabase URL
+                $supabaseKey = 'your-supabase-key'; // Replace with your Supabase API key
+
+                $uploadService = new UploadService($supabaseUrl, $supabaseKey);
+                $response = $uploadService->uploadImage($bucket, $imageTmpPath, $destinationPath);
+
+                if (isset($response['Key'])) {
+                    // Supabase returns the object key; construct the URL
+                    $imageURL = "{$supabaseUrl}/storage/v1/object/public/{$bucket}/{$response['Key']}";
+                } else {
+                    $errors[] = 'Failed to upload image.';
                 }
-                else {
-                    header('Location: /php/S4_PHP/Product/add'); 
-                    exit(); 
+            } catch (\Exception $e) {
+                $errors[] = "Image upload error: " . $e->getMessage();
+            }
+        } else {
+            $errors[] = 'Image is required or failed to upload.';
+        }
 
-                }
-                exit(); 
-            } 
-        } 
- 
-        include 'App/views/product/add.php'; 
+        // If no errors, proceed to add the product
+        if (empty($errors)) {
+            $newproduct = (new ProductRepository($this->db))->addProduct($name, $description, $price, $imageURL, $category_id);
+
+            if ($newproduct) {
+                $this->products[] = $newproduct;
+                $_SESSION['products'] = $this->products;
+                header('Location: /php/S4_PHP/Product/list');
+                exit();
+            } else {
+                header('Location: /php/S4_PHP/Product/add');
+                exit();
+            }
+        }
     }
+
+    include 'App/views/product/add.php';
+}
     
     public function addFavorites() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

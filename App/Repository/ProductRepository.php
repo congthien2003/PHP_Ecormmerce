@@ -74,12 +74,12 @@ class ProductRepository
         $products = $stmt->fetchAll(PDO::FETCH_OBJ);
 
         // Get total count for pagination
-        $countQuery = "SELECT COUNT(*) as total FROM product WHERE 1=1";
+        $countQuery = "SELECT COUNT(*) as total FROM product";
         if ($category !== null && $category !== 0) {
-            $countQuery .= " AND CategoryId = :category";
+            $countQuery .= " WHERE CategoryId = $category";
         }
         $countStmt = $this->conn->prepare($countQuery);
-        // $countStmt->execute([':category' => $category]);
+        $countStmt->execute();
         $total = $countStmt->fetch(PDO::FETCH_OBJ)->total;
 
         // Return result with pagination info
@@ -344,10 +344,19 @@ description=:description, price=:price, imageURL=:imageURL, categoryId=:category
     }
 
     public function getProductsByCategory($category) {
-        $query = "SELECT p.*, c.name as category_name 
+        echo $category;
+        if ($category == 0) {
+            $query = "SELECT p.*, c.name as category_name 
+                 FROM products p 
+                 LEFT JOIN categories c ON p.category_id = c.id";   
+        }
+        else {
+            $query = "SELECT p.*, c.name as category_name 
                  FROM products p 
                  LEFT JOIN categories c ON p.category_id = c.id 
                  WHERE c.slug = ?";
+        }
+        
         
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$category]);

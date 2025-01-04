@@ -101,6 +101,8 @@ class Router {
                 if (!method_exists($controller, $method)) {
                     throw new \Exception("Method {$method} not found in controller {$controllerClass}");
                 }
+                
+                
 
                 $response = call_user_func_array([$controller, $method], $params);
                 

@@ -3,6 +3,8 @@
 
 require_once 'App/Controllers/ProductApiController.php';
 require_once 'App/Controllers/CategoryApiController.php';
+require_once 'App/Controllers/OrderApiController.php';
+require_once 'App/Controllers/OrderDetailApiController.php';
 require_once 'App/Controllers/Auth.php';
 
 // Product routes
@@ -26,3 +28,14 @@ $router->post('/categories', [CategoryApiController::class, 'create']);
 $router->put('/categories/{id}', [CategoryApiController::class, 'update']);
 $router->delete('/categories/{id}', [CategoryApiController::class, 'delete']);
 
+// Order routes
+$router->get('/orders', [OrderApiController::class, 'getAllOrders']);
+$router->get('/orders/{id}', [OrderApiController::class, 'getOrderById']);
+$router->get('/orders/history/{idUser}', [OrderApiController::class, 'getOrderByIdUser']);
+$router->post('/orders', [OrderApiController::class, 'createOrder']);
+$router->put('/orders/{id}', [OrderApiController::class, 'updateOrder']);
+
+// Order Details
+$router->get('/orderdetails/{idOrder}', [OrderDetailApiController::class, 'getAll']);
+$router->post('/orderdetails', [OrderDetailApiController::class, 'create']);
+$router->delete('/orderdetails/{id}', [OrderDetailApiController::class, 'delete']);

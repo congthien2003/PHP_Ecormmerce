@@ -2,7 +2,6 @@
 require_once 'App/Models/ProductModel.php'; 
 require_once 'App/Repository/ProductRepository.php'; 
 require_once('App/config/database.php'); 
-require_once('App/Middlewares/AuthMiddleware.php');
 class ProductApiController {
 
     private $productRepository; 
@@ -23,14 +22,12 @@ class ProductApiController {
     }
     // GET: /products
     public function getAll() {
-        AuthMiddleware::handleAuth();
         try {
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 12;
-            $category = isset($_GET['category']) ? $_GET['category'] : null;
-            $sort = isset($_GET['sort']) ? $_GET['sort'] : 'default';
+            $category = (isset($_GET['category']) && $_GET['category'] > 0) ? $_GET['category'] : null;
 
-            $result = $this->productRepository->getProducts($page, $limit, $category, $sort);
+            $result = $this->productRepository->getProducts($page, $limit, $category,);
             Response::json([
                 'status' => 'success',
                 'data' => [
@@ -81,7 +78,7 @@ class ProductApiController {
             $data = json_decode(file_get_contents('php://input'), true);
 
             // Validate required fields
-            $requiredFields = ['name', 'price', 'description', 'imageUrl', 'categoryId'];
+            $requiredFields = ['Name', 'Price', 'Description', 'ImageURL', 'CategoryId'];
             $errors = [];
 
             // Check for missing fields
@@ -92,21 +89,21 @@ class ProductApiController {
             }
 
             // Validate data types and values
-            if (isset($data['price'])) {
-                if (!is_numeric($data['price']) || $data['price'] <= 0) {
-                    $errors['price'] = "Price must be a positive number";
+            if (isset($data['Price'])) {
+                if (!is_numeric($data['Price']) || $data['Price'] <= 0) {
+                    $errors['Price'] = "Price must be a positive number";
                 }
             }
 
-            if (isset($data['categoryId'])) {
-                if (!is_numeric($data['categoryId'])) {
-                    $errors['categoryId'] = "Category ID must be a number";
+            if (isset($data['CategoryId'])) {
+                if (!is_numeric($data['CategoryId'])) {
+                    $errors['CategoryId'] = "Category ID must be a number";
                 }
             }
 
-            if (isset($data['imageUrl'])) {
-                if (!filter_var($data['imageUrl'], FILTER_VALIDATE_URL)) {
-                    $errors['imageUrl'] = "Invalid image URL format";
+            if (isset($data['ImageURL'])) {
+                if (!filter_var($data['ImageURL'], FILTER_VALIDATE_URL)) {
+                    $errors['ImageURL'] = "Invalid image URL format";
                 }
             }
 
@@ -121,7 +118,7 @@ class ProductApiController {
             }
 
             // Create the product
-            $product = $this->productRepository->addProduct($data['name'], $data['description'], floatval($data['price']), $data['imageUrl'], $data['categoryId']);
+            $product = $this->productRepository->addProduct($data['Name'], $data['Description'], floatval($data['Price']), $data['ImageURL'], $data['CategoryId']);
             
             if ($product) {
                 Response::json([
